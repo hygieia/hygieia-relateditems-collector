@@ -4,12 +4,10 @@ import com.capitalone.dashboard.client.RelatedItemsClient;
 import com.capitalone.dashboard.model.AutoDiscoverCollectorItem;
 import com.capitalone.dashboard.model.AutoDiscovery;
 import com.capitalone.dashboard.model.Collector;
+import com.capitalone.dashboard.repository.AutoDiscoveryRepositoryImpl;
 import com.capitalone.dashboard.repository.BaseCollectorRepository;
-import com.capitalone.dashboard.repository.CollectorItemRepository;
-import com.capitalone.dashboard.repository.ComponentRepository;
-import com.capitalone.dashboard.repository.DashboardRepository;
-import com.capitalone.dashboard.repository.RelatedCollectorItemRepository;
 import com.capitalone.dashboard.repository.RelatedItemCollectorRepository;
+import org.apache.commons.collections.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,35 +22,27 @@ import java.util.Objects;
 /**
  * <h1>RelatedItemsCollectorTask</h1>
  *
- * @since 09/28/2018
+ * @since 08/20/2019
  */
 @Component
 public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollector> {
 
     private final Logger LOGGER = LoggerFactory.getLogger(RelatedItemsCollectorTask.class);
-    private DashboardRepository dashboardRepository;
-    private ComponentRepository componentRepository;
-    private CollectorItemRepository collectorItemRepository;
-    private RelatedCollectorItemRepository relatedCollectorItemRepository;
     private RelatedItemCollectorRepository relatedItemCollectorRepository;
+    private AutoDiscoveryRepositoryImpl autoDiscoveryRepositoryImpl;
     private RelatedItemSettings settings;
     private static final String COLLECTOR_NAME = "RelatedItems Collector";
     private RelatedItemsClient relatedItemsClient;
 
     @Autowired
-    public RelatedItemsCollectorTask(TaskScheduler taskScheduler, DashboardRepository dashboardRepository,
-                                     ComponentRepository componentRepository,
-                                     CollectorItemRepository collectorItemRepository,
-                                     RelatedCollectorItemRepository relatedCollectorItemRepository,
+    public RelatedItemsCollectorTask(TaskScheduler taskScheduler,
                                      RelatedItemCollectorRepository relatedItemCollectorRepository,
+                                     AutoDiscoveryRepositoryImpl autoDiscoveryRepositoryImpl,
                                      RelatedItemsClient relatedItemsClient,
                                      RelatedItemSettings settings) {
         super(taskScheduler, "RelatedItemsCollector");
-        this.dashboardRepository = dashboardRepository;
-        this.componentRepository = componentRepository;
-        this.collectorItemRepository = collectorItemRepository;
-        this.relatedCollectorItemRepository = relatedCollectorItemRepository;
         this.relatedItemCollectorRepository = relatedItemCollectorRepository;
+        this.autoDiscoveryRepositoryImpl = autoDiscoveryRepositoryImpl;
         this.settings = settings;
         this.relatedItemsClient = relatedItemsClient;
     }
@@ -61,6 +51,7 @@ public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollect
     public void collect(RelatedItemsCollector collector) {
         LOGGER.info("RelatedItem Collector");
         logBanner("Collecting related items");
+        refresh();
         long beginTime = getLastUpdated(collector);
         long endTime = System.currentTimeMillis();
         Map<ObjectId, List<AutoDiscoverCollectorItem>> dashboardsGrouped = relatedItemsClient.collectAllRelatedCollectorItems(beginTime, endTime);
@@ -82,7 +73,7 @@ public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollect
     }
 
     /**
-     * This property helps to determine AuditStatus Collector execution interval
+     * This property helps to determine RelatedItem Collector execution interval
      */
     @Override
     public String getCron() {
@@ -94,6 +85,15 @@ public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollect
             return collector.getLastExecuted();
         } else {
             return System.currentTimeMillis() - settings.getOffSet();
+        }
+    }
+
+    private void refresh(){
+        long start = System.currentTimeMillis();
+       List<AutoDiscovery> autoDiscoveries=  autoDiscoveryRepositoryImpl.findAllAutoDiscoveriesWithStatusNew();
+        if(CollectionUtils.isNotEmpty(autoDiscoveries)){
+            List<AutoDiscovery> updated = relatedItemsClient.processAutoDiscoveryBatch(autoDiscoveries);
+            log("Refresh -> retried POST on ",start,updated.size());
         }
     }
 }
