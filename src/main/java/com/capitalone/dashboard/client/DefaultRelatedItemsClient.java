@@ -107,7 +107,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
             distinctComponents.forEach(component -> {
                 List<Dashboard> dashboards = dashboardRepository.findByApplicationComponentIdsIn(Arrays.asList(component.getId()));
                 dashboards.forEach(dashboard -> {
-                    // if (dashboard.getTitle().equalsIgnoreCase("CI383423")){
+                    LOGGER.info("processing dashboard ---"+ dashboard.getTitle());
                     List<AutoDiscovery> autoDiscoveries = autoDiscoveryRepository.findByMetaDataTitle(dashboard.getTitle());
                     //  if there is no entry for dashboard in auto_discovery collection, add one
                     if (CollectionUtils.isEmpty(autoDiscoveries)) {
