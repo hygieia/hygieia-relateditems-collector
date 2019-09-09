@@ -169,6 +169,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                     autoDiscoveries.add(adConsolidate);
                 } else {
                     autoDiscoveryRepository.save(autoDiscovery);
+                    autoDiscovery.setCreatedTimestamp(System.currentTimeMillis());
                     autoDiscoveries.add(autoDiscovery);
                 }
                 LOGGER.info("Auto discovered entries for dashboard : " + dashboard.getTitle());
