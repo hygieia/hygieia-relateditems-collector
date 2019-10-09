@@ -1,5 +1,6 @@
 package com.capitalone.dashboard.client;
 
+import com.capitalone.dashboard.client.RestClient;
 import com.capitalone.dashboard.collector.RelatedItemSettings;
 import com.capitalone.dashboard.misc.HygieiaException;
 import com.capitalone.dashboard.model.AutoDiscoverCollectorItem;
@@ -59,7 +60,7 @@ import java.util.stream.Collectors;
 @Component
 public class DefaultRelatedItemsClient implements RelatedItemsClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRelatedItemsClient.class);
-    private final RestOperations restOperations;
+    private final RestClient restClient;
     private RelatedItemSettings relatedItemSettings;
     private String bearerToken;
     private RelatedCollectorItemRepository relatedCollectorItemRepository;
@@ -73,7 +74,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
 
 
     @Autowired
-    public DefaultRelatedItemsClient(RelatedItemSettings relatedItemSettings, Supplier<RestOperations> restOperationsSupplier,
+    public DefaultRelatedItemsClient(RelatedItemSettings relatedItemSettings, RestClient restClient,
                                      RelatedCollectorItemRepository relatedCollectorItemRepository,
                                      DashboardRepository dashboardRepository,
                                      ComponentRepository componentRepository,
@@ -81,7 +82,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                                      CollectorRepository collectorRepository,
                                      AutoDiscoveryRepository autoDiscoveryRepository) {
         this.relatedItemSettings = relatedItemSettings;
-        this.restOperations = restOperationsSupplier.get();
+        this.restClient = restClient;
         this.relatedCollectorItemRepository = relatedCollectorItemRepository;
         this.dashboardRepository = dashboardRepository;
         this.componentRepository = componentRepository;
@@ -212,10 +213,9 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
     private ResponseEntity<String> makeRestCall(String payload, String token) {
         ResponseEntity<String> response = null;
         try {
-            response = restOperations.exchange(getSubscriberUrl(), HttpMethod.POST, new HttpEntity<>(payload, createHeaders(token, relatedItemSettings.getAccept())), String.class);
+            response = restClient.makeRestCallPost(getSubscriberUrl(), createHeaders(token, relatedItemSettings.getAccept()), payload);
         } catch (RestClientException re) {
-            LOGGER.error("Error with REST url: " + getSubscriberUrl());
-            LOGGER.error(re.getMessage());
+            LOGGER.error("Error with REST url: " + getSubscriberUrl(), re);
         }
         return response;
     }
