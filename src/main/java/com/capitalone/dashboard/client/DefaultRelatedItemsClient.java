@@ -1,6 +1,5 @@
 package com.capitalone.dashboard.client;
 
-import com.capitalone.dashboard.client.RestClient;
 import com.capitalone.dashboard.collector.RelatedItemSettings;
 import com.capitalone.dashboard.misc.HygieiaException;
 import com.capitalone.dashboard.model.AutoDiscoverCollectorItem;
@@ -14,14 +13,17 @@ import com.capitalone.dashboard.model.Collector;
 import com.capitalone.dashboard.model.CollectorItem;
 import com.capitalone.dashboard.model.CollectorType;
 import com.capitalone.dashboard.model.Dashboard;
+import com.capitalone.dashboard.model.FeatureFlag;
 import com.capitalone.dashboard.model.relation.RelatedCollectorItem;
 import com.capitalone.dashboard.repository.AutoDiscoveryRepository;
 import com.capitalone.dashboard.repository.CollectorItemRepository;
 import com.capitalone.dashboard.repository.CollectorRepository;
 import com.capitalone.dashboard.repository.ComponentRepository;
 import com.capitalone.dashboard.repository.DashboardRepository;
+import com.capitalone.dashboard.repository.FeatureFlagRepository;
 import com.capitalone.dashboard.repository.RelatedCollectorItemRepository;
-import com.capitalone.dashboard.util.Supplier;
+import com.capitalone.dashboard.util.FeatureFlagsEnum;
+import com.capitalone.dashboard.util.HygieiaUtils;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
@@ -31,9 +33,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestOperations;
@@ -45,7 +45,6 @@ import org.springframework.security.oauth2.client.token.grant.client.ClientCrede
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestOperations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,14 +60,14 @@ import java.util.stream.Collectors;
 public class DefaultRelatedItemsClient implements RelatedItemsClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRelatedItemsClient.class);
     private final RestClient restClient;
-    private RelatedItemSettings relatedItemSettings;
-    private String bearerToken;
-    private RelatedCollectorItemRepository relatedCollectorItemRepository;
-    private DashboardRepository dashboardRepository;
-    private ComponentRepository componentRepository;
-    private CollectorItemRepository collectorItemRepository;
-    private CollectorRepository collectorRepository;
-    private AutoDiscoveryRepository autoDiscoveryRepository;
+    private final RelatedItemSettings relatedItemSettings;
+    private final RelatedCollectorItemRepository relatedCollectorItemRepository;
+    private final DashboardRepository dashboardRepository;
+    private final ComponentRepository componentRepository;
+    private final CollectorItemRepository collectorItemRepository;
+    private final CollectorRepository collectorRepository;
+    private final AutoDiscoveryRepository autoDiscoveryRepository;
+    private final FeatureFlagRepository featureFlagRepository;
     private static final String BEARER = "Bearer ";
     private static final String HTTP_CODE_200 = "200";
 
@@ -80,7 +79,8 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                                      ComponentRepository componentRepository,
                                      CollectorItemRepository collectorItemRepository,
                                      CollectorRepository collectorRepository,
-                                     AutoDiscoveryRepository autoDiscoveryRepository) {
+                                     AutoDiscoveryRepository autoDiscoveryRepository,
+                                     FeatureFlagRepository featureFlagRepository ) {
         this.relatedItemSettings = relatedItemSettings;
         this.restClient = restClient;
         this.relatedCollectorItemRepository = relatedCollectorItemRepository;
@@ -89,7 +89,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
         this.collectorItemRepository = collectorItemRepository;
         this.collectorRepository = collectorRepository;
         this.autoDiscoveryRepository = autoDiscoveryRepository;
-
+        this.featureFlagRepository = featureFlagRepository;
     }
 
 
@@ -185,7 +185,6 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
         OAuth2AccessToken accessToken = restTemplate().getAccessToken();
         List<AutoDiscovery> updated = new ArrayList<>();
         String token = BEARER + accessToken.getValue();
-        setBearerToken(token);
         if (CollectionUtils.isNotEmpty(autoDiscoveries)) {
             autoDiscoveries.forEach(autoDiscovery -> {
                 AutoDiscoverySubscriberRemoteRequest autoDiscoverySubscriberRemoteRequest = new AutoDiscoverySubscriberRemoteRequest();
@@ -222,43 +221,45 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
 
     private AutoDiscoverCollectorItem getAutoDiscoveryCollectorItemForCollectorTypes(CollectorItem leftCollectorItem, AutoDiscovery ad) {
         Collector collector = collectorRepository.findOne(leftCollectorItem.getCollectorId());
+        FeatureFlag featureFlag = featureFlagRepository.findByName(FeatureFlagsEnum.auto_discover.toString());
         AutoDiscoveredEntry adEntry;
         switch (collector.getCollectorType()) {
             case Build:
                 adEntry = ad.getBuildEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case SCM:
                 adEntry = ad.getCodeRepoEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case CodeQuality:
                 adEntry = ad.getStaticCodeEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case LibraryPolicy:
                 adEntry = ad.getLibraryScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case StaticSecurityScan:
                 adEntry = ad.getSecurityScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case Deployment:
                 adEntry = ad.getDeploymentEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case Artifact:
                 adEntry = ad.getArtifactEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case AgileTool:
                 adEntry = ad.getFeatureEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
 
             case Test:
                 adEntry = ad.getFunctionalTestEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry);
+                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+
         }
         return null;
     }
@@ -367,11 +368,6 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
     private String getSubscriberUrl() {
         return relatedItemSettings.getSubscribers().get(0);
     }
-
-    private void setBearerToken(String bearerToken) {
-        this.bearerToken = bearerToken;
-    }
-
 
     private CollectorType findCollectorType(ObjectId collectorId) {
         Collector collector = collectorRepository.findOne(collectorId);
