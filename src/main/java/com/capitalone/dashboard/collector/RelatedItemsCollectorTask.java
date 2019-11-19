@@ -27,11 +27,10 @@ import java.util.Objects;
 @Component
 public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollector> {
 
-    private final Logger LOGGER = LoggerFactory.getLogger(RelatedItemsCollectorTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelatedItemsCollectorTask.class);
     private RelatedItemCollectorRepository relatedItemCollectorRepository;
     private AutoDiscoveryRepositoryImpl autoDiscoveryRepositoryImpl;
     private RelatedItemSettings settings;
-    private static final String COLLECTOR_NAME = "RelatedItems Collector";
     private RelatedItemsClient relatedItemsClient;
 
     @Autowired

@@ -96,6 +96,7 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
     @Override
     public Map<ObjectId, List<AutoDiscoverCollectorItem>> collectAllRelatedCollectorItems(long beginDate, long endDate) {
         List<RelatedCollectorItem> relatedCollectorItems = relatedCollectorItemRepository.findAllByCreationTimeIsBetweenOrderByCreationTimeDesc(beginDate - 1, endDate + 1);
+        FeatureFlag featureFlag = featureFlagRepository.findByName(FeatureFlagsEnum.auto_discover.toString());
         Map<ObjectId, List<AutoDiscoverCollectorItem>> dashboardGrouping = new HashMap<>();
         relatedCollectorItems.forEach(rci -> {
             CollectorItem leftCollectorItem = collectorItemRepository.findOne(rci.getLeft());
@@ -115,8 +116,8 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                         initialCall(dashboardGrouping, leftCollectorItem, rightCollectorItem, dashboard);
                     } else {
                         autoDiscoveries.forEach(ad -> {
-                            AutoDiscoverCollectorItem l = getAutoDiscoveryCollectorItemForCollectorTypes(leftCollectorItem, ad);
-                            AutoDiscoverCollectorItem r = getAutoDiscoveryCollectorItemForCollectorTypes(rightCollectorItem, ad);
+                            AutoDiscoverCollectorItem l = getAutoDiscoveryCollectorItemForCollectorTypes(leftCollectorItem, ad, featureFlag);
+                            AutoDiscoverCollectorItem r = getAutoDiscoveryCollectorItemForCollectorTypes(rightCollectorItem, ad, featureFlag);
                             List<AutoDiscoverCollectorItem> refs = new ArrayList<>();
                             if (Objects.isNull(l)) {
                                 convertToAutoDiscoverCollectorItem(leftCollectorItem, refs);
@@ -193,8 +194,8 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                 String json = new Gson().toJson(autoDiscoverySubscriberRemoteRequest);
                 ResponseEntity<String> response = makeRestCall(json, token);
                 if (Objects.nonNull(response)) {
-                    String response_Code = response.getStatusCode().toString();
-                    if (response_Code.equalsIgnoreCase(HTTP_CODE_200)) {
+                    String responseCode = response.getStatusCode().toString();
+                    if (StringUtils.equalsIgnoreCase(responseCode, HTTP_CODE_200)) {
                         autoDiscovery.getAllEntries().stream().forEach(entry -> {
                             if (entry.getStatus().equals(AutoDiscoveryStatusType.NEW)) {
                                 entry.setStatus(AutoDiscoveryStatusType.AWAITING_USER_RESPONSE);
@@ -219,49 +220,50 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
         return response;
     }
 
-    private AutoDiscoverCollectorItem getAutoDiscoveryCollectorItemForCollectorTypes(CollectorItem leftCollectorItem, AutoDiscovery ad) {
-        Collector collector = collectorRepository.findOne(leftCollectorItem.getCollectorId());
-        FeatureFlag featureFlag = featureFlagRepository.findByName(FeatureFlagsEnum.auto_discover.toString());
+    private AutoDiscoverCollectorItem getAutoDiscoveryCollectorItemForCollectorTypes(CollectorItem collectorItem, AutoDiscovery ad, FeatureFlag featureFlag) {
+        Collector collector = collectorRepository.findOne(collectorItem.getCollectorId());
+
         AutoDiscoveredEntry adEntry;
         switch (collector.getCollectorType()) {
             case Build:
-                adEntry = ad.getBuildEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getBuildEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case SCM:
-                adEntry = ad.getCodeRepoEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getCodeRepoEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case CodeQuality:
-                adEntry = ad.getStaticCodeEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getStaticCodeEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case LibraryPolicy:
-                adEntry = ad.getLibraryScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getLibraryScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case StaticSecurityScan:
-                adEntry = ad.getSecurityScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getSecurityScanEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case Deployment:
-                adEntry = ad.getDeploymentEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getDeploymentEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case Artifact:
-                adEntry = ad.getArtifactEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getArtifactEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case AgileTool:
-                adEntry = ad.getFeatureEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getFeatureEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
             case Test:
-                adEntry = ad.getFunctionalTestEntries().stream().filter(entry -> matchOptions(entry.getOptions(), leftCollectorItem.getOptions(), collector)).findAny().orElse(null);
-                return HygieiaUtils.allowAutoDiscover(featureFlag,collector.getCollectorType()) ? getAutoDiscoverCollectorItem(leftCollectorItem, collector, adEntry) : null;
+                adEntry = ad.getFunctionalTestEntries().stream().filter(entry -> matchOptions(entry.getOptions(), collectorItem.getOptions(), collector)).findAny().orElse(null);
+                return HygieiaUtils.allowAutoDiscover(featureFlag, collector.getCollectorType()) ? getAutoDiscoverCollectorItem(collectorItem, collector, adEntry) : null;
 
+            default:
+                return null;
         }
-        return null;
     }
 
     private AutoDiscoverCollectorItem getAutoDiscoverCollectorItem(CollectorItem collectorItem, Collector collector, AutoDiscoveredEntry adEntry) {
@@ -375,9 +377,12 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
     }
 
     private List<com.capitalone.dashboard.model.Component> getComponentsForCollectorItemId(CollectorItem collectorItem) {
-        if (Objects.isNull(collectorItem)) return null;
-        CollectorType collectorType = findCollectorType(collectorItem.getCollectorId());
+
         List<com.capitalone.dashboard.model.Component> components = new ArrayList<>();
+        if (Objects.isNull(collectorItem)) return components;
+
+        CollectorType collectorType = findCollectorType(collectorItem.getCollectorId());
+
         switch (collectorType) {
             case Build:
                 return componentRepository.findByBuildCollectorItemId(collectorItem.getId());
@@ -393,8 +398,9 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
                 return componentRepository.findByStaticSecurityScanCollectorItems(collectorItem.getId());
             case Test:
                 return componentRepository.findByTestCollectorItems(collectorItem.getId());
+            default:
+                return components;
         }
-        return components;
     }
 
     private void addAllDistinctCollectorItemsToMap(Map<ObjectId, List<AutoDiscoverCollectorItem>> dashboardGrouping, Dashboard dashboard, List<AutoDiscoverCollectorItem> refs) {
