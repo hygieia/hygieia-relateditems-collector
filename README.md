@@ -1,5 +1,9 @@
 # hygieia-relateditems-collector
-This project repository is a scheduled data collection from relatedItems collection in Hygieia and post it to subscriber end point.
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/Hygieia/hygieia-relateditems-collector.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Hygieia/hygieia-relateditems-collector/alerts/)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/Hygieia/hygieia-relateditems-collector.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Hygieia/hygieia-relateditems-collector/context:java)
+[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+<br>This project repository is a scheduled data collection from relatedItems collection in Hygieia and post it to subscriber end point.
 
 ### Setup Instructions - Build & Deploy
 
