@@ -15,9 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * <h1>RelatedItemsCollectorTask</h1>
@@ -27,11 +27,10 @@ import java.util.Objects;
 @Component
 public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollector> {
 
-    private final Logger LOGGER = LoggerFactory.getLogger(RelatedItemsCollectorTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RelatedItemsCollectorTask.class);
     private RelatedItemCollectorRepository relatedItemCollectorRepository;
     private AutoDiscoveryRepositoryImpl autoDiscoveryRepositoryImpl;
     private RelatedItemSettings settings;
-    private static final String COLLECTOR_NAME = "RelatedItems Collector";
     private RelatedItemsClient relatedItemsClient;
 
     @Autowired
@@ -72,7 +71,7 @@ public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollect
         return relatedItemCollectorRepository;
     }
 
-    /**
+    /*
      * This property helps to determine RelatedItem Collector execution interval
      */
     @Override
@@ -80,12 +79,12 @@ public class RelatedItemsCollectorTask extends CollectorTask<RelatedItemsCollect
         return this.settings.getCron();
     }
 
-    private long getLastUpdated(Collector collector) {
-        if (!Objects.isNull(collector.getLastExecuted()) && collector.getLastExecuted() != 0) {
-            return collector.getLastExecuted();
-        } else {
-            return System.currentTimeMillis() - settings.getOffSet();
-        }
+    /*
+     * method to return the last updated timee for colleector.
+     */
+    private long getLastUpdated(@NotNull Collector collector) {
+        return (collector.getLastExecuted() != 0) ? collector.getLastExecuted() :
+                System.currentTimeMillis() - settings.getOffSet();
     }
 
     private void refresh(){

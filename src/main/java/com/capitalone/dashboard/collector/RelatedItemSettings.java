@@ -16,7 +16,7 @@ public class RelatedItemSettings {
     private List<String> subscribers;
     private String clientId;
     private String clientSecret;
-    long offSet;
+    private long offSet;
     private String subscriberName;
     private String tokenUrl;
     private String accept;
