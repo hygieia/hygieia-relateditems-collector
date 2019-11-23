@@ -305,21 +305,19 @@ public class DefaultRelatedItemsClient implements RelatedItemsClient {
 
     private AutoDiscoverCollectorItem toAutoDiscoverCollectorItem(CollectorItem collectorItem, FeatureFlag featureFlag) {
         CollectorType collectorType = (Objects.isNull(collectorItem.getCollector())) ? findCollectorType(collectorItem.getCollectorId()) : collectorItem.getCollector().getCollectorType();
-        if(!HygieiaUtils.allowAutoDiscover(featureFlag, collectorType)) return null;
+        if (!HygieiaUtils.allowAutoDiscover(featureFlag, collectorType)) return null;
 
         AutoDiscoverCollectorItem autoDiscoverCollectorItem = new AutoDiscoverCollectorItem();
-        if (Objects.nonNull(collectorItem)) {
-            autoDiscoverCollectorItem.setId(collectorItem.getId());
-            autoDiscoverCollectorItem.setAutoDiscoverStatus(AutoDiscoveryStatusType.NEW);
-            autoDiscoverCollectorItem.setCollector(collectorItem.getCollector());
-            autoDiscoverCollectorItem.setOptions(collectorItem.getOptions());
-            autoDiscoverCollectorItem.setCollectorId(collectorItem.getCollectorId());
-            autoDiscoverCollectorItem.setEnabled(collectorItem.isEnabled());
-            autoDiscoverCollectorItem.setPushed(collectorItem.isPushed());
-            autoDiscoverCollectorItem.setDescription(collectorItem.getDescription());
-            autoDiscoverCollectorItem.setLastUpdated(collectorItem.getLastUpdated());
-            autoDiscoverCollectorItem.setNiceName(collectorItem.getNiceName());
-        }
+        autoDiscoverCollectorItem.setId(collectorItem.getId());
+        autoDiscoverCollectorItem.setAutoDiscoverStatus(AutoDiscoveryStatusType.NEW);
+        autoDiscoverCollectorItem.setCollector(collectorItem.getCollector());
+        autoDiscoverCollectorItem.setOptions(collectorItem.getOptions());
+        autoDiscoverCollectorItem.setCollectorId(collectorItem.getCollectorId());
+        autoDiscoverCollectorItem.setEnabled(collectorItem.isEnabled());
+        autoDiscoverCollectorItem.setPushed(collectorItem.isPushed());
+        autoDiscoverCollectorItem.setDescription(collectorItem.getDescription());
+        autoDiscoverCollectorItem.setLastUpdated(collectorItem.getLastUpdated());
+        autoDiscoverCollectorItem.setNiceName(collectorItem.getNiceName());
         return autoDiscoverCollectorItem;
     }
 

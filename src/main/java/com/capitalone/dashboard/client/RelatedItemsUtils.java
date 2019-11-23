@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class RelatedItemsUtils {
+public final class RelatedItemsUtils {
 
     public static AutoDiscoveredEntry getEntry(AutoDiscoverCollectorItem adci) {
         AutoDiscoveredEntry autoDiscoveredEntry = new AutoDiscoveredEntry();
