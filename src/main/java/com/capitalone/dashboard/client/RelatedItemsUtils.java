@@ -1,21 +1,20 @@
 package com.capitalone.dashboard.client;
 
+import com.capitalone.dashboard.model.AutoDiscovery;
 import com.capitalone.dashboard.model.AutoDiscoverCollectorItem;
 import com.capitalone.dashboard.model.AutoDiscoveredEntry;
 import com.capitalone.dashboard.model.CollectorType;
+import com.capitalone.dashboard.model.FeatureFlag;
+import com.capitalone.dashboard.util.HygieiaUtils;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class RelatedItemsUtils {
+public final class RelatedItemsUtils {
 
     public static AutoDiscoveredEntry getEntry(AutoDiscoverCollectorItem adci) {
-        return toEntry(adci);
-    }
-
-    public static AutoDiscoveredEntry toEntry(AutoDiscoverCollectorItem adci) {
         AutoDiscoveredEntry autoDiscoveredEntry = new AutoDiscoveredEntry();
         autoDiscoveredEntry.setDescription(adci.getDescription());
         autoDiscoveredEntry.setNiceName(adci.getNiceName());
@@ -24,9 +23,8 @@ public class RelatedItemsUtils {
         return autoDiscoveredEntry;
     }
 
-
-    public static void setBuildEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.Build)) {
+    public static void setBuildEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.Build.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getBuildEntries())) {
                 List<AutoDiscoveredEntry> builds = autoDiscovery.getBuildEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -40,8 +38,8 @@ public class RelatedItemsUtils {
 
     }
 
-    public static void setCodeRepoEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.SCM)) {
+    public static void setCodeRepoEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.SCM.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getCodeRepoEntries())) {
                 List<AutoDiscoveredEntry> repos = autoDiscovery.getCodeRepoEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -54,8 +52,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setStaticCodeEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.CodeQuality)) {
+    public static void setStaticCodeEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.CodeQuality.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getStaticCodeEntries())) {
                 List<AutoDiscoveredEntry> staticCodeEntries = autoDiscovery.getStaticCodeEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -68,8 +66,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setLibraryPolicyEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.LibraryPolicy)) {
+    public static void setLibraryPolicyEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.LibraryPolicy.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getLibraryScanEntries())) {
                 List<AutoDiscoveredEntry> libraryScanEntries = autoDiscovery.getLibraryScanEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -83,8 +81,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setStaticSecurityEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.StaticSecurityScan)) {
+    public static void setStaticSecurityEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.StaticSecurityScan.equals(collectorType) ) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getStaticCodeEntries())) {
                 List<AutoDiscoveredEntry> securityScanEntries = autoDiscovery.getSecurityScanEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -97,8 +95,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setArtifactEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.Artifact)) {
+    public static void setArtifactEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.Artifact.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getArtifactEntries())) {
                 List<AutoDiscoveredEntry> artifactEntries = autoDiscovery.getArtifactEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -111,8 +109,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setDeployEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.Deployment)) {
+    public static void setDeployEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.Deployment.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getDeploymentEntries())) {
                 List<AutoDiscoveredEntry> deploymentEntries = autoDiscovery.getDeploymentEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -125,8 +123,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setFunctionalTestEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.Test)) {
+    public static void setFunctionalTestEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.Test.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getFunctionalTestEntries())) {
                 List<AutoDiscoveredEntry> functionalTestEntries = autoDiscovery.getFunctionalTestEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
@@ -139,8 +137,8 @@ public class RelatedItemsUtils {
         }
     }
 
-    public static void setFeatureEntries(com.capitalone.dashboard.model.AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType) {
-        if (collectorType.equals(CollectorType.AgileTool)) {
+    public static void setFeatureEntries(AutoDiscovery autoDiscovery, AutoDiscoverCollectorItem adci, CollectorType collectorType, FeatureFlag featureFlag) {
+        if (HygieiaUtils.allowAutoDiscover(featureFlag,collectorType) && CollectorType.AgileTool.equals(collectorType)) {
             if (CollectionUtils.isNotEmpty(autoDiscovery.getFeatureEntries())) {
                 List<AutoDiscoveredEntry> featureEntries = autoDiscovery.getFeatureEntries();
                 List<AutoDiscoveredEntry> ls = new ArrayList<>();
