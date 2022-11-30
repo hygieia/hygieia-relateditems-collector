@@ -51,7 +51,7 @@
         <repository.name>hygieia-relateditems-collector</repository.name>
         <apache.rat.plugin.version>0.13</apache.rat.plugin.version>
         <bc.version>3.0.1</bc.version>
-        <com.capitalone.dashboard.core.version>4.0.1</com.capitalone.dashboard.core.version>
+        <com.capitalone.dashboard.core.version>3.7.11</com.capitalone.dashboard.core.version>
         <commons.io.version>2.4</commons.io.version>
         <coveralls.maven.plugin.version>4.3.0</coveralls.maven.plugin.version>
         <developmentTeam>The Hygieia Team</developmentTeam>
@@ -199,11 +199,6 @@
             <version>5.6.4</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-mongodb</artifactId>
-            <version>3.3.5</version>
-        </dependency>
-        <dependency>
             <groupId>com.querydsl</groupId>
             <artifactId>querydsl-mongodb</artifactId>
             <version>5.0.0</version>
@@ -212,6 +207,16 @@
             <groupId>com.querydsl</groupId>
             <artifactId>querydsl-apt</artifactId>
             <version>5.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <version>2.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons-core</artifactId>
+            <version>1.4.1.RELEASE</version>
         </dependency>
     </dependencies>
 
