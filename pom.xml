@@ -124,7 +124,7 @@
             <version>${com.capitalone.dashboard.core.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>rg.apache.tomcat.embed</groupId>
+                    <groupId>org.apache.tomcat.embed</groupId>
                     <artifactId>tomcat-embed-logging-juli</artifactId>
                 </exclusion>
             </exclusions>
