@@ -122,6 +122,12 @@
             <groupId>com.capitalone.dashboard</groupId>
             <artifactId>core</artifactId>
             <version>${com.capitalone.dashboard.core.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>rg.apache.tomcat.embed</groupId>
+                    <artifactId>tomcat-embed-logging-juli</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
